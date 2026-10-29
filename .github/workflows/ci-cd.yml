@@ -103,4 +103,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/novamart-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/novamart-frontend:${{ github.sha }}
-```
