@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create your NovaMart account for premium tech peripherals, warranty tracking, and secure express checkout.">
+    <title>Create Account | NovaMart</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="standalone-auth-body">
+
+    <div class="standalone-auth-box">
+        <a href="index.html" class="back-to-shop-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Store</span>
+        </a>
+
+        <div class="standalone-auth-brand">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>Nova<span>Mart</span></span>
+        </div>
+
+        <h1 style="font-size:1.45rem; font-weight:800; text-align:center; margin-bottom:6px;">Create Your Account</h1>
+        <p style="text-align:center; color:var(--text-muted); font-size:0.88rem; margin-bottom:24px;">
+            Sign up to unlock express checkout, track orders, and save delivery preferences.
+        </p>
+
+        <div id="signup-alert" style="display:none; padding:10px 14px; border-radius:var(--radius-sm); font-size:0.85rem; margin-bottom:16px;"></div>
+
+        <form id="signup-form">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="signup-name">Full Name *</label>
+                    <input type="text" id="signup-name" name="name" required placeholder="Sarah Connor" autocomplete="name">
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="signup-email">Email Address *</label>
+                    <input type="email" id="signup-email" name="email" required placeholder="sarah@example.com" autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password">Password * (min 6 chars)</label>
+                    <div class="input-password-wrap">
+                        <input type="password" id="signup-password" name="password" required minlength="6" placeholder="••••••••" autocomplete="new-password">
+                        <button type="button" class="btn-toggle-pw" onclick="togglePasswordVisibility('signup-password')">Show</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password *</label>
+                    <div class="input-password-wrap">
+                        <input type="password" id="signup-confirm-password" name="confirm_password" required minlength="6" placeholder="••••••••" autocomplete="new-password">
+                        <button type="button" class="btn-toggle-pw" onclick="togglePasswordVisibility('signup-confirm-password')">Show</button>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="signup-phone">Phone Number *</label>
+                    <input type="tel" id="signup-phone" name="phone" required placeholder="+1 (555) 999-8888" autocomplete="tel">
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="signup-address">Shipping Address (Optional)</label>
+                    <input type="text" id="signup-address" name="address" placeholder="742 Evergreen Terrace" autocomplete="street-address">
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-city">City</label>
+                    <input type="text" id="signup-city" name="city" placeholder="Springfield">
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-postal">Postal Code</label>
+                    <input type="text" id="signup-postal" name="postal" placeholder="97477">
+                </div>
+            </div>
+
+            <button type="submit" id="signup-submit-btn" class="btn-primary" style="width:100%; margin-top:20px; padding:12px; font-weight:700;">
+                Create Account &amp; Continue
+            </button>
+        </form>
+
+        <div class="standalone-auth-footer">
+            Already have an account? <a href="login.html">Sign in here</a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script>
+        function togglePasswordVisibility(fieldId) {
+            const input = document.getElementById(fieldId);
+            const btn = event.currentTarget;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = 'Hide';
+            } else {
+                input.type = 'password';
+                btn.textContent = 'Show';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Track PAGE_VIEW into SQL database
+            window.api.logActivity('PAGE_VIEW', 'Viewed Signup Page', { page: 'signup.html' });
+
+            const form = document.getElementById('signup-form');
+            const alertBox = document.getElementById('signup-alert');
+            const submitBtn = document.getElementById('signup-submit-btn');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                alertBox.style.display = 'none';
+
+                const password = document.getElementById('signup-password').value;
+                const confirmPassword = document.getElementById('signup-confirm-password').value;
+
+                if (password !== confirmPassword) {
+                    alertBox.textContent = 'Passwords do not match. Please verify.';
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = '#fef2f2';
+                    alertBox.style.color = '#b91c1c';
+                    alertBox.style.border = '1px solid #fecaca';
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating Account...';
+
+                const payload = {
+                    name: document.getElementById('signup-name').value.trim(),
+                    email: document.getElementById('signup-email').value.trim(),
+                    password: password,
+                    phone: document.getElementById('signup-phone').value.trim(),
+                    address: document.getElementById('signup-address').value.trim(),
+                    city: document.getElementById('signup-city').value.trim(),
+                    postal: document.getElementById('signup-postal').value.trim(),
+                    session_id: window.api.getSessionId()
+                };
+
+                try {
+                    const res = await window.api.signup(payload);
+                    alertBox.textContent = 'Account created successfully! Redirecting...';
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = '#f0fdf4';
+                    alertBox.style.color = '#15803d';
+                    alertBox.style.border = '1px solid #bbf7d0';
+
+                    // Redirect back to store after 1 second
+                    setTimeout(() => {
+                        const returnTo = new URLSearchParams(window.location.search).get('return') || 'index.html';
+                        window.location.href = returnTo;
+                    }, 1000);
+                } catch (err) {
+                    alertBox.textContent = err.message || 'Failed to create account.';
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = '#fef2f2';
+                    alertBox.style.color = '#b91c1c';
+                    alertBox.style.border = '1px solid #fecaca';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Account & Continue';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

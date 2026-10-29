@@ -1,0 +1,7 @@
+flask==3.0.3
+flask-cors==4.0.1
+requests==2.32.3
+python-dotenv==1.0.1
+werkzeug==3.0.3
+mysql-connector-python==8.4.0
+pytest==8.2.1

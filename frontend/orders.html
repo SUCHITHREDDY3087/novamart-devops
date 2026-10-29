@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track your NovaMart orders, view itemized receipts, and monitor shipment status stored in the SQL database.">
+    <title>My Orders | NovaMart</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    <style>
+        .orders-page-container {
+            max-width: 1080px;
+            margin: 36px auto 60px;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .orders-header-card {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%);
+            color: #ffffff;
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .orders-header-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(79, 70, 229, 0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .orders-header-card h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .orders-header-card p {
+            color: #c7d2fe;
+            font-size: 0.95rem;
+            max-width: 600px;
+        }
+
+        .orders-filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-surface);
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .order-search-input-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .order-search-input-wrap input {
+            width: 100%;
+            padding-left: 38px;
+        }
+
+        .order-search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .orders-filter-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-secondary);
+        }
+
+        .filter-chip.active, .filter-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .orders-grid-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .order-item-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .order-item-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .order-card-top {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-color);
+            gap: 12px;
+        }
+
+        .order-card-ref {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .order-status-pill {
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.76rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-confirmed { background: #dbeafe; color: #1e40af; }
+        .status-processing { background: #fef3c7; color: #b45309; }
+        .status-shipped { background: #e0e7ff; color: #4338ca; }
+        .status-delivered { background: #dcfce7; color: #15803d; }
+
+        .order-card-body {
+            padding: 24px;
+        }
+
+        .order-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            padding-bottom: 18px;
+            border-bottom: 1px dashed var(--border-color);
+            margin-bottom: 18px;
+            font-size: 0.88rem;
+        }
+
+        .order-meta-grid .meta-block span {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 3px;
+        }
+
+        .order-meta-grid .meta-block strong {
+            color: var(--text-primary);
+        }
+
+        .order-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            margin-bottom: 18px;
+        }
+
+        .order-items-table th {
+            text-align: left;
+            padding: 8px 12px;
+            background: var(--bg-subtle);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.78rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .order-items-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .order-summary-box {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 12px;
+        }
+
+        .order-summary-details {
+            min-width: 260px;
+            font-size: 0.86rem;
+        }
+
+        .order-summary-details .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+
+        .order-summary-details .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-color);
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .order-card-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border-color);
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 2px 8px;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .copy-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Announcement Bar -->
+    <aside class="top-notice">
+        <div class="announcement-content">
+            <span class="announcement-tag">ORDERS &amp; SHIPMENTS</span>
+            <span>All orders are securely processed and verified with SQL transactional integrity.</span>
+        </div>
+        <div class="top-links" style="display:flex; align-items:center; gap:10px;">
+            <a href="index.html">Back to Store</a>
+        </div>
+    </aside>
+
+    <!-- Main Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="brand-logo" id="brand-logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+                <span>Nova<span>Mart</span></span>
+            </a>
+
+            <!-- Action Controls -->
+            <nav class="nav-actions">
+                <a href="index.html" class="nav-btn" title="Shop Catalog">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    <span>Store Catalog</span>
+                </a>
+
+                <!-- User Profile / Auth State -->
+                <div id="user-nav-container" class="user-menu-wrap">
+                    <button id="auth-nav-btn" class="user-nav-btn" onclick="handleAuthNavClick()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>Sign In</span>
+                    </button>
+                    <div id="user-dropdown-menu" class="user-dropdown-menu">
+                        <div class="user-dropdown-header">
+                            <strong id="user-dropdown-name">User Name</strong>
+                            <span id="user-dropdown-email">user@example.com</span>
+                        </div>
+                        <a href="index.html" class="user-dropdown-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                            <span>Back to Store</span>
+                        </a>
+                        <button class="user-dropdown-item danger" onclick="handleOrdersPageLogout()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            <span>Sign Out</span>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Orders Container -->
+    <main class="orders-page-container">
+        
+        <!-- Header Banner -->
+        <div class="orders-header-card">
+            <h1>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 14 14"></polyline>
+                </svg>
+                <span>My Orders &amp; Shipment Tracking</span>
+            </h1>
+            <p>
+                All your orders and checkout records are verified and stored in the SQL database. Track delivery progress and review purchase details.
+            </p>
+            <div id="orders-user-badge" style="margin-top:14px; display:inline-block; font-size:0.85rem; background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:var(--radius-full);">
+                <span>Loading profile...</span>
+            </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="orders-filter-bar">
+            <div class="order-search-input-wrap">
+                <svg class="order-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="order-search-input" placeholder="Search by Order ID (e.g. ORD-169929) or Email..." autocomplete="off">
+            </div>
+
+            <div class="orders-filter-chips">
+                <button class="filter-chip active" data-filter="all" onclick="setOrderFilter('all')">All Records</button>
+                <button class="filter-chip" data-filter="confirmed" onclick="setOrderFilter('confirmed')">Confirmed</button>
+                <button class="filter-chip" onclick="refreshOrders()">↻ Refresh</button>
+            </div>
+        </div>
+
+        <!-- Orders Output List -->
+        <div id="orders-container" class="orders-grid-list">
+            <div class="state-container" style="padding:40px 10px;">
+                <p>Retrieving order history from SQL database...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script>
+        let allOrders = [];
+        let currentFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateAuthHeader();
+            await loadOrders();
+
+            // Log PAGE_VIEW into SQL database
+            window.api.logActivity('PAGE_VIEW', 'Customer opened My Orders Page', { page: 'orders.html' });
+
+            // Setup search debounce
+            let searchTimeout;
+            const searchInput = document.getElementById('order-search-input');
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const q = e.target.value.trim();
+                searchTimeout = setTimeout(async () => {
+                    await loadOrders(q);
+                    if (q) {
+                        window.api.logActivity('SEARCH_ORDERS', `Searched orders for "${q}"`, { query: q });
+                    }
+                }, 300);
+            });
+        });
+
+        function updateAuthHeader() {
+            const user = window.api.getCurrentUser();
+            const badge = document.getElementById('orders-user-badge');
+            const authBtn = document.getElementById('auth-nav-btn');
+
+            if (user) {
+                badge.innerHTML = `👤 Viewing orders for: <strong>${escapeHtml(user.name)}</strong> (${escapeHtml(user.email)})`;
+                const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+                authBtn.className = 'user-nav-btn logged-in';
+                authBtn.innerHTML = `
+                    <span class="user-avatar-circle">${escapeHtml(initials)}</span>
+                    <span>${escapeHtml(user.name.split(' ')[0])}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                `;
+                document.getElementById('user-dropdown-name').textContent = user.name;
+                document.getElementById('user-dropdown-email').textContent = user.email;
+            } else {
+                badge.innerHTML = `🌐 Guest View: Displaying recent store orders. <a href="login.html" style="color:#ffffff; text-decoration:underline; font-weight:700;">Sign In</a> to access your personal account orders.`;
+                authBtn.className = 'user-nav-btn';
+                authBtn.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Sign In</span>
+                `;
+            }
+        }
+
+        function handleAuthNavClick() {
+            if (!window.api.isAuthenticated()) {
+                window.location.href = 'login.html?return=orders.html';
+            } else {
+                document.getElementById('user-dropdown-menu').classList.toggle('active');
+            }
+        }
+
+        async function handleOrdersPageLogout() {
+            await window.api.logout();
+            window.location.reload();
+        }
+
+        async function loadOrders(searchQuery = '') {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = `
+                <div class="state-container" style="padding:40px 10px;">
+                    <p>Retrieving orders from SQL database...</p>
+                </div>
+            `;
+
+            try {
+                const params = {};
+                if (searchQuery) params.q = searchQuery;
+
+                const res = await window.api.getOrders(params);
+                allOrders = res.data || [];
+                renderOrdersList();
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="state-container">
+                        <h3>Error Connecting to Database</h3>
+                        <p>${err.message || 'Unable to retrieve orders at this time.'}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderOrdersList() {
+            const container = document.getElementById('orders-container');
+
+            let filtered = [...allOrders];
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(o => (o.status || '').toLowerCase() === currentFilter.toLowerCase());
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="state-container" style="padding:48px 16px; background:var(--bg-surface); border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px; color:var(--text-muted);">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 14 14"></polyline>
+                        </svg>
+                        <h3 style="font-size:1.2rem; font-weight:700;">No Orders Found</h3>
+                        <p style="color:var(--text-secondary); max-width:400px; margin:6px auto 18px;">
+                            ${allOrders.length === 0 ? "You haven't placed any orders yet. Discover our latest audio and tech gear!" : "No orders matching your search query or filter."}
+                        </p>
+                        <a href="index.html" class="btn-primary" style="display:inline-flex; padding:10px 20px;">
+                            Browse Store Catalog
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(order => {
+                let statusClass = 'status-confirmed';
+                const status = (order.status || 'Confirmed').toLowerCase();
+                if (status.includes('ship')) statusClass = 'status-shipped';
+                else if (status.includes('deliver')) statusClass = 'status-delivered';
+                else if (status.includes('process')) statusClass = 'status-processing';
+
+                const formattedDate = order.created_at
+                    ? new Date(order.created_at.replace(' ', 'T')).toLocaleString(undefined, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                      })
+                    : 'Recently Placed';
+
+                const itemsRows = (order.items && order.items.length > 0)
+                    ? order.items.map(item => `
+                        <tr>
+                            <td><strong>${escapeHtml(item.product_name)}</strong></td>
+                            <td style="text-align:center;">${item.quantity}</td>
+                            <td style="text-align:right;">$${parseFloat(item.unit_price).toFixed(2)}</td>
+                            <td style="text-align:right; font-weight:700;">$${parseFloat(item.subtotal).toFixed(2)}</td>
+                        </tr>
+                    `).join('')
+                    : `
+                        <tr>
+                            <td colspan="4" style="color:var(--text-muted); font-style:italic;">
+                                Verified Order Package &bull; Items securely dispatched
+                            </td>
+                        </tr>
+                    `;
+
+                return `
+                    <article class="order-item-card">
+                        <div class="order-card-top">
+                            <div class="order-card-ref">
+                                <span>#${escapeHtml(order.id)}</span>
+                                <button class="copy-btn" onclick="copyOrderId('${escapeHtml(order.id)}')">Copy ID</button>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <span style="font-size:0.85rem; color:var(--text-secondary);">${formattedDate}</span>
+                                <span class="order-status-pill ${statusClass}">${escapeHtml(order.status || 'Confirmed')}</span>
+                            </div>
+                        </div>
+
+                        <div class="order-card-body">
+                            <div class="order-meta-grid">
+                                <div class="meta-block">
+                                    <span>Recipient</span>
+                                    <strong>${escapeHtml(order.customer_name)}</strong>
+                                </div>
+                                <div class="meta-block">
+                                    <span>Contact Email</span>
+                                    <strong>${escapeHtml(order.customer_email)}</strong>
+                                </div>
+                                <div class="meta-block">
+                                    <span>Delivery Address</span>
+                                    <strong>${escapeHtml(order.shipping_address)}</strong>
+                                </div>
+                                <div class="meta-block">
+                                    <span>Payment Method</span>
+                                    <strong>${escapeHtml(order.payment_method || 'Cash on Delivery')}</strong>
+                                </div>
+                            </div>
+
+                            <table class="order-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product Name</th>
+                                        <th style="text-align:center;">Qty</th>
+                                        <th style="text-align:right;">Unit Price</th>
+                                        <th style="text-align:right;">Line Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${itemsRows}
+                                </tbody>
+                            </table>
+
+                            <div class="order-summary-box">
+                                <div class="order-summary-details">
+                                    <div class="row">
+                                        <span>Subtotal</span>
+                                        <span>$${parseFloat(order.subtotal || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div class="row">
+                                        <span>Shipping</span>
+                                        <span>${order.shipping_fee === 0 ? 'FREE' : '$' + parseFloat(order.shipping_fee || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div class="row">
+                                        <span>Estimated Tax (8%)</span>
+                                        <span>$${parseFloat(order.tax_amount || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div class="total-row">
+                                        <span>Total Amount</span>
+                                        <span>$${parseFloat(order.total_amount || 0).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="order-card-actions">
+                            <span>✓ Database Transaction Verified &bull; 2-Year Official Warranty Active</span>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-secondary" style="padding:6px 14px; font-size:0.82rem;" onclick="window.print()">
+                                    Print Receipt
+                                </button>
+                                <a href="index.html" class="btn-primary" style="padding:6px 14px; font-size:0.82rem;">
+                                    Buy Again
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function setOrderFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-chip').forEach(c => {
+                c.classList.toggle('active', c.dataset.filter === filter);
+            });
+            renderOrdersList();
+        }
+
+        function refreshOrders() {
+            const q = document.getElementById('order-search-input').value.trim();
+            loadOrders(q);
+            showToast("Orders refreshed from SQL database", "info");
+        }
+
+        function copyOrderId(id) {
+            navigator.clipboard.writeText(id).then(() => {
+                showToast(`Copied ${id} to clipboard!`, "success");
+            }).catch(() => {
+                showToast(`Order ID: ${id}`, "info");
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+            document.getElementById('toast-container').appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('user-dropdown-menu');
+            const wrap = document.getElementById('user-nav-container');
+            if (menu && wrap && !wrap.contains(e.target)) {
+                menu.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

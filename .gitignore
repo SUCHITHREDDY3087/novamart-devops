@@ -1,0 +1,53 @@
+# Environment and secrets
+.env
+*.env.local
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases and Docker volume mounts
+mysql_data/
+*.sqlite3
+*.sqlite
+*.db
+
+# Archives & compressed files
+*.rar
+*.zip
+*.tar.gz
+*.7z
+
+# IDE and Operating System
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

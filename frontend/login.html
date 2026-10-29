@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sign in to NovaMart to access your orders, track shipments, and experience express checkout.">
+    <title>Sign In | NovaMart</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="standalone-auth-body">
+
+    <div class="standalone-auth-box">
+        <a href="index.html" class="back-to-shop-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Store</span>
+        </a>
+
+        <div class="standalone-auth-brand">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>Nova<span>Mart</span></span>
+        </div>
+
+        <h1 style="font-size:1.45rem; font-weight:800; text-align:center; margin-bottom:6px;">Welcome Back</h1>
+        <p style="text-align:center; color:var(--text-muted); font-size:0.88rem; margin-bottom:24px;">
+            Sign in with your credentials to manage your orders and checkout.
+        </p>
+
+        <div id="login-alert" style="display:none; padding:10px 14px; border-radius:var(--radius-sm); font-size:0.85rem; margin-bottom:16px;"></div>
+
+        <form id="login-form">
+            <div class="form-group full-width" style="margin-bottom:16px;">
+                <label for="login-email">Email Address *</label>
+                <input type="email" id="login-email" name="email" required placeholder="john@example.com" autocomplete="email">
+            </div>
+
+            <div class="form-group full-width" style="margin-bottom:20px;">
+                <label for="login-password">Password *</label>
+                <div class="input-password-wrap">
+                    <input type="password" id="login-password" name="password" required placeholder="••••••••" autocomplete="current-password">
+                    <button type="button" class="btn-toggle-pw" onclick="togglePasswordVisibility('login-password')">Show</button>
+                </div>
+            </div>
+
+            <button type="submit" id="login-submit-btn" class="btn-primary" style="width:100%; padding:12px; font-weight:700;">
+                Sign In
+            </button>
+        </form>
+
+        <div class="demo-credentials-helper">
+            <strong>Quick Demo Accounts (Click to Fill):</strong>
+            <div style="margin-top:6px;">
+                <button type="button" class="demo-creds-btn" onclick="fillDemo('john@example.com', 'password123')">
+                    👤 Customer: john@example.com
+                </button>
+                <button type="button" class="demo-creds-btn" onclick="fillDemo('admin@novamart.local', 'password123')">
+                    🛡️ Admin: admin@novamart.local
+                </button>
+            </div>
+        </div>
+
+        <div class="standalone-auth-footer">
+            Don't have an account yet? <a href="signup.html">Create one here</a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script>
+        function togglePasswordVisibility(fieldId) {
+            const input = document.getElementById(fieldId);
+            const btn = event.currentTarget;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = 'Hide';
+            } else {
+                input.type = 'password';
+                btn.textContent = 'Show';
+            }
+        }
+
+        function fillDemo(email, pass) {
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-password').value = pass;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Track PAGE_VIEW into SQL database
+            window.api.logActivity('PAGE_VIEW', 'Viewed Login Page', { page: 'login.html' });
+
+            const form = document.getElementById('login-form');
+            const alertBox = document.getElementById('login-alert');
+            const submitBtn = document.getElementById('login-submit-btn');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                alertBox.style.display = 'none';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Verifying Credentials...';
+
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value;
+
+                try {
+                    const res = await window.api.login({ email, password });
+                    alertBox.textContent = `Welcome back, ${res.user.name}! Redirecting...`;
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = '#f0fdf4';
+                    alertBox.style.color = '#15803d';
+                    alertBox.style.border = '1px solid #bbf7d0';
+
+                    setTimeout(() => {
+                        const returnTo = new URLSearchParams(window.location.search).get('return') || 'index.html';
+                        window.location.href = returnTo;
+                    }, 1000);
+                } catch (err) {
+                    alertBox.textContent = err.message || 'Invalid email or password.';
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = '#fef2f2';
+                    alertBox.style.color = '#b91c1c';
+                    alertBox.style.border = '1px solid #fecaca';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
